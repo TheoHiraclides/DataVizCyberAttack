@@ -21,7 +21,7 @@
       var scrape = "action.hacking.vector.";
       var found = false;
       
-      for (var i = 0; i < 5000; i++) {
+      for (var i = 0; i < 9000; i++) {
         found = false;
         for (var j = 0; j < hacking.length; j++) {
           if (data[i][scrape] == hacking[j]["name"]) {
@@ -42,8 +42,8 @@
         .style("fill", "steelblue")
         .attr("x", function(d, i) { return i*30 + 30; })
         .attr("width", 20)
-        .attr("y", function(d) { return 200 + d.value/25; })
-        .attr("height", function(d) { return d.value/25; });
+        .attr("y", function(d) { return 200 - d.value/35; })
+        .attr("height", function(d) { return d.value/35; });
     })
 
   </script>
