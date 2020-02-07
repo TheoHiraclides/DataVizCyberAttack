@@ -1,1 +1,31 @@
-Insert awesome data visualisation here
+d3.csv( "https://raw.githubusercontent.com/TheoHiraclides/DataVizCyberAttack/master/vcdb_deonehot.csv", function(error, data) {
+      console.log(data)
+      
+      let hacking = [];
+      var scrape = "action.hacking.vector.";
+      var found = false;
+      
+      for (var i = 0; i < 5000; i++) {
+        found = false;
+        for (var j = 0; j < hacking.length; j++) {
+          if (data[i][scrape] == hacking[j]["name"]) {
+            hacking[j]["value"] += 1;
+            found = true;
+          }
+        }
+        if (found == false) {
+          hacking.push({"name": data[i][scrape], "value": 1});
+        }
+      }
+      
+      console.log(hacking);
+      
+      svg.selectAll("bar")
+      .data(hacking)
+      .enter().append("rect")
+        .style("fill", "steelblue")
+        .attr("x", function(d, i) { return i*30 + 30; })
+        .attr("width", 20)
+        .attr("y", function(d) { return 200 + d.value/25; })
+        .attr("height", function(d) { return d.value/25; });
+    })
