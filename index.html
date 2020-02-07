@@ -1,4 +1,20 @@
-d3.csv( "https://raw.githubusercontent.com/TheoHiraclides/DataVizCyberAttack/master/vcdb_deonehot.csv", function(error, data) {
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <style>
+    body { margin:0;position:fixed;top:0;right:0;bottom:0;left:0; }
+  </style>
+</head>
+
+<body>
+  <script>
+    // Feel free to change or delete any of the code you see in this editor!
+    var svg = d3.select("body").append("svg")
+      .attr("width", 960)
+      .attr("height", 500)
+    
+      d3.csv( "https://raw.githubusercontent.com/TheoHiraclides/DataVizCyberAttack/master/vcdb_deonehot.csv", function(error, data) {
       console.log(data)
       
       let hacking = [];
@@ -29,3 +45,6 @@ d3.csv( "https://raw.githubusercontent.com/TheoHiraclides/DataVizCyberAttack/mas
         .attr("y", function(d) { return 200 + d.value/25; })
         .attr("height", function(d) { return d.value/25; });
     })
+
+  </script>
+</body>
