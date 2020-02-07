@@ -36,14 +36,27 @@
       
       console.log(hacking);
       
-      svg.selectAll("bar")
-      .data(hacking)
-      .enter().append("rect")
+      var scaleY = d3.scaleLinear().domain(d3.extent(hacking, function (d) {return d.value})).range([0,300])
+      
+      
+      var bar = svg.selectAll("bar")
+        .data(hacking)
+        .enter();
+      
+      bar
+      	.append("rect")
         .style("fill", "steelblue")
-        .attr("x", function(d, i) { return i*30 + 30; })
-        .attr("width", 20)
-        .attr("y", function(d) { return 200 - d.value/35; })
-        .attr("height", function(d) { return d.value/35; });
+        .attr("x", function(d, i) { return i*70 + 30; })
+        .attr("width", 60)
+        .attr("y", function(d) { return 350 - scaleY(d.value); })
+        .attr("height", function(d) { return scaleY(d.value); });
+      
+      bar
+        .append("text")
+      	.attr("x", function(d, i) { return i*70 - 10; })
+        .attr("y", function(d, i) { return 370 + 20*(i%2); })
+      	.attr("text-anchor", "middle")
+      	.text(function(d) { return d.name });
     })
 
   </script>
