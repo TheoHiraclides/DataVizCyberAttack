@@ -12,7 +12,7 @@
     // Feel free to change or delete any of the code you see in this editor!
     var svg = d3.select("body").append("svg")
       .attr("width", 960)
-      .attr("height", 500)
+      .attr("height", 900)
     
       d3.csv( "https://raw.githubusercontent.com/TheoHiraclides/DataVizCyberAttack/master/vcdb_deonehot.csv", function(error, data) {
       console.log(data)
@@ -60,6 +60,74 @@
       	.attr("text-anchor", "middle")
       	.text(function(d) { return d.name });
     })
+    
+    d3.csv( "https://raw.githubusercontent.com/TheoHiraclides/DataVizCyberAttack/master/vcdb_cut.csv", function(error, data) {
+
+	console.log(data)
+
+  let fields = ['action.Malware', 'action.Hacking', 'action.Social', 'action.Physical', 'action.Misuse']
+
+  let datac = []
+
+  var entryid = 0
+
+  for (var i = 0; i < 8000; i++) {
+  	var j = 0
+  	var found = false
+  	while(found == false && j < fields.length) {
+  		if (data[i][fields[j]] == 'TRUE') {
+  			datac.push({'type': fields[j], 'actor': data[i]['Actor'], 'entryid': entryid})
+  			entryid++
+  			found = true
+  		}
+  		j++
+  	}
+  }
+
+  data = datac
+
+  dimensions = ['entryid', 'type', 'actor']
+  
+  var y = {}
+
+  y['entryid'] = d3.scaleLinear()
+      .domain( d3.extent(data, function(d) { return +d['entryid']; }) )
+      .range([800, 500])
+
+  y['type'] = d3.scalePoint()
+      .domain( data.map(function(d) { return d['type']; }))
+      .range([800, 500])
+
+  y['actor'] = d3.scalePoint()
+      .domain( data.map(function(d) { return d['actor']; }))
+      .range([800, 500])
+  
+  x = d3.scalePoint()
+    .range([0, 960])
+    .padding(0.2)
+    .domain(dimensions);
+
+  console.log(data.map(function(d) { return d['type']; }))
+  console.log(x(data[0]))
+  console.log(y['actor'](data[0]['actor']))
+  
+  function path(d) {
+      return d3.line()(dimensions.map(function(p) { return [x(p), y[p](d[p])]; }));
+  }
+
+  svg
+    .selectAll("myPath")
+    .data(data)
+    .enter().append("path")
+    .attr("d",  path)
+    .style("fill", "none")
+    .style("stroke", "#69b3a2")
+    .style("opacity", 0.5)
+
+  
+  console.log(data)
+
+})
 
   </script>
 </body>
