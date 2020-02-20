@@ -2,132 +2,96 @@
 <head>
   <meta charset="utf-8">
   <script src="https://d3js.org/d3.v4.min.js"></script>
-  <style>
-    body { margin:0;position:fixed;top:0;right:0;bottom:0;left:0; }
-  </style>
+  <script src="https://bl.ocks.org/syntagmatic/raw/3341641/render-queue.js"></script>
 </head>
 
+<style type="text/css">
+	body {
+  min-width: 760px;
+}
+
+.parcoords {
+  display: block;
+}
+
+.parcoords svg,
+.parcoords canvas {
+  font: 10px sans-serif;
+  position: absolute;
+}
+
+.parcoords canvas {
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.axis .title {
+  font-size: 20px;
+  transform: rotate(-21deg) translate(-5px,-6px);
+  fill: #222;
+}
+
+.axis line,
+.axis path {
+  fill: none;
+  stroke: #ccc;
+  stroke-width: 1px;
+}
+
+.axis .tick text {
+  fill: #222;
+  pointer-events: none;
+}
+
+.axis.industry .tick text,
+.axis.actor .tick text {
+  font-size: 12px; 
+  font-weight: bold;
+}
+
+.axis:hover line,
+.axis:hover path,
+.axis.active line,
+.axis.active path {
+  fill: none;
+  stroke: #222;
+  stroke-width: 1px;
+}
+
+.axis:hover .title {
+  font-weight: bold;
+}
+
+.axis:hover .tick text {
+  opacity: 1;
+}
+
+.axis.active .title {
+  font-weight: bold;
+}
+
+.axis.active .tick text {
+  opacity: 1;
+  font-weight: bold;
+}
+
+.brush .extent {
+  fill-opacity: .3;
+  stroke: #fff;
+  stroke-width: 1px;
+}
+
+pre {
+  width: 100%;
+  height: 300px;
+  margin: 6px 12px;
+  tab-size: 40;
+  font-size: 10px;
+  overflow: auto;
+}
+</style>
+
+
 <body>
-  <script>
-    // Feel free to change or delete any of the code you see in this editor!
-    var svg = d3.select("body").append("svg")
-      .attr("width", 960)
-      .attr("height", 900)
-    
-      d3.csv( "https://raw.githubusercontent.com/TheoHiraclides/DataVizCyberAttack/master/vcdb_deonehot.csv", function(error, data) {
-      console.log(data)
-      
-      let hacking = [];
-      var scrape = "action.hacking.vector.";
-      var found = false;
-      
-      for (var i = 0; i < 8000; i++) {
-        found = false;
-        for (var j = 0; j < hacking.length; j++) {
-          if (data[i][scrape] == hacking[j]["name"]) {
-            hacking[j]["value"] += 1;
-            found = true;
-          }
-        }
-        if (found == false) {
-          hacking.push({"name": data[i][scrape], "value": 1});
-        }
-      }
-
-      hacking.forEach(function(d) { if(d.name == "") d.name = "NONE"; });
-      
-      console.log(hacking);
-      
-      var scaleY = d3.scaleLinear().domain(d3.extent(hacking, function (d) {return d.value})).range([0,300])
-      
-      
-      var bar = svg.selectAll("bar")
-        .data(hacking)
-        .enter();
-      
-      bar
-      	.append("rect")
-        .style("fill", "steelblue")
-        .attr("x", function(d, i) { return i*75 + 30; })
-        .attr("width", 60)
-        .attr("y", function(d) { return 350 - scaleY(d.value); })
-        .attr("height", function(d) { return scaleY(d.value); });
-      
-      bar
-        .append("text")
-      	.attr("x", function(d, i) { return i*75 + 60; })
-        .attr("y", function(d, i) { return 370 + 20*(i%2); })
-      	.attr("text-anchor", "middle")
-      	.text(function(d) { return d.name });
-    })
-    
-    d3.csv( "https://raw.githubusercontent.com/TheoHiraclides/DataVizCyberAttack/master/vcdb_cut.csv", function(error, data) {
-
-	console.log(data)
-
-  let fields = ['action.Malware', 'action.Hacking', 'action.Social', 'action.Physical', 'action.Misuse']
-
-  let datac = []
-
-  var entryid = 0
-
-  for (var i = 0; i < 8000; i++) {
-  	var j = 0
-  	var found = false
-  	while(found == false && j < fields.length) {
-  		if (data[i][fields[j]] == 'TRUE') {
-  			datac.push({'type': fields[j], 'actor': data[i]['Actor'], 'entryid': entryid})
-  			entryid++
-  			found = true
-  		}
-  		j++
-  	}
-  }
-
-  data = datac
-
-  dimensions = ['entryid', 'type', 'actor']
-  
-  var y = {}
-
-  y['entryid'] = d3.scaleLinear()
-      .domain( d3.extent(data, function(d) { return +d['entryid']; }) )
-      .range([800, 500])
-
-  y['type'] = d3.scalePoint()
-      .domain( data.map(function(d) { return d['type']; }))
-      .range([800, 500])
-
-  y['actor'] = d3.scalePoint()
-      .domain( data.map(function(d) { return d['actor']; }))
-      .range([800, 500])
-  
-  x = d3.scalePoint()
-    .range([0, 960])
-    .padding(0.2)
-    .domain(dimensions);
-
-  console.log(data.map(function(d) { return d['type']; }))
-  console.log(x(data[0]))
-  console.log(y['actor'](data[0]['actor']))
-  
-  function path(d) {
-      return d3.line()(dimensions.map(function(p) { return [x(p), y[p](d[p])]; }));
-  }
-
-  svg
-    .selectAll("myPath")
-    .data(data)
-    .enter().append("path")
-    .attr("d",  path)
-    .style("fill", "none")
-    .style("stroke", "#69b3a2")
-    .style("opacity", 0.5)
-
-  
-  console.log(data)
-
-})
-
-  </script>
+  <script src="d3js.js"></script>
 </body>
