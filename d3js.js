@@ -190,10 +190,24 @@ d3.csv(path_to_csv, function(error, data) {
       return d3.ascending(x.key, y.key);
     })
   })
+
+  var line_i = 0
+
+    var cutoff = 50
+
+    while (line_i < data_agg.length) {
+   	  var sum = 0;
+      data_agg[line_i].values.forEach(function(v) { sum += v.value; })
+      if (sum < cutoff) {
+      	data_agg.splice(line_i, 1);
+      } else {
+      	line_i += 1;
+      }
+    }
       
   var x_line = d3.scaleLinear()
     .domain((d3.extent(data, function (d) { return +d.year; })))
-    .range([0, width]);
+    .range([0, width - margin.right]);
 
   var y_line = d3.scaleLinear()
     .domain([0, d3.max(data_agg_flat, function (d) { return d.value; })])
@@ -213,9 +227,9 @@ d3.csv(path_to_csv, function(error, data) {
     .y(function(d) { return y_line(d.value) })
 
   let color_list = d3.scaleOrdinal(d3.schemeCategory10)
-  var cutoff = 15
+  var cutoff = 70
 
-  svg.selectAll(".line")
+  var lines = svg.selectAll(".line")
     .data(data_agg)
     .enter()
       .append("path")
@@ -224,6 +238,16 @@ d3.csv(path_to_csv, function(error, data) {
       .attr("fill", 'none')
       .attr("id", function(d) { return 'tag'+d.key.replace(/\s+/g, ''); })
       .attr("d", function(d) { return line(d.values); } );
+
+  lines
+      .data(data_agg)
+      .enter()
+      .append("text")
+      .text(function(d) { return d.key; })
+      .style("font", "18px times")
+      .attr("x", width - 1.3*margin.right)
+      .attr("y", function(d,i) { return innerHeight + margin.line_top + i * 25; })
+      .attr("fill", function(d) { return d.color = color_list(d.key); });
   
   output.html(d3.tsvFormat(data.slice(0,24)));
 
@@ -331,16 +355,28 @@ d3.csv(path_to_csv, function(error, data) {
     })
 
     var line_i = 0
+    var length_arr = []
+    while (line_i < data_agg.length) {
+   	  var sum = 0;
+      data_agg[line_i].values.forEach(function(v) { sum += v.value; })
+      length_arr.push(sum)
+      line_i ++;
+    }
 
-    var cutoff = 15
+    var cutoff = 1
 
+    if (length_arr.length > 9) {
+    	cutoff = length_arr[9]
+    }
+
+    line_i = 0
     while (line_i < data_agg.length) {
    	  var sum = 0;
       data_agg[line_i].values.forEach(function(v) { sum += v.value; })
       if (sum < cutoff) {
       	data_agg.splice(line_i, 1);
       } else {
-      	line_i += 1;
+      	line_i ++;
       }
     }
       
@@ -349,7 +385,7 @@ d3.csv(path_to_csv, function(error, data) {
 
     var x_line = d3.scaleLinear()
       .domain((d3.extent(selected, function (d) { return +d.year; })))
-      .range([0, width]);
+      .range([0, width - margin.right]);
 
     var y_line = d3.scaleLinear()
       .domain([0, d3.max(data_agg_flat, function (d) { return d.value; })])
@@ -387,6 +423,17 @@ d3.csv(path_to_csv, function(error, data) {
         .attr("fill", 'none')
         .attr("id", function(d) { return 'tag'+d.key.replace(/\s+/g, ''); })
         .attr("d", function(d) { return line(d.values); } );
+    
+    lines
+      .data(data_agg)
+      .enter()
+      .append("text")
+      .attr("class", "line")
+      .text(function(d) { return d.key; })
+      .style("font", "18px times")
+      .attr("x", width - 1.3*margin.right)
+      .attr("y", function(d,i) { return innerHeight + margin.line_top + i * 25; })
+      .attr("fill", function(d) { return d.color = color_list(d.key); });
 
     output.html(d3.tsvFormat(selected.slice(0,24)));
   }
