@@ -1,7 +1,7 @@
-var margin = {top: 100, right: 130, bottom: 20, left: 188},
+var margin = {top: 100, right: 130, bottom: 20, left: 188, line_top: 80, line_bottom: 70},
     width = document.body.clientWidth - margin.left - margin.right,
-    height = 740 - margin.top - margin.bottom,
-    innerHeight = height - 2;
+    height = 740 + 500 + margin.line_top + margin.line_bottom - margin.top - margin.bottom,
+    innerHeight = 740 - margin.top - margin.bottom;
 
 var devicePixelRatio = window.devicePixelRatio || 1;
 
@@ -98,10 +98,26 @@ d3.csv(path_to_csv, function(error, data) {
       d[p.key] = !d[p.key] ? null : p.type.coerce(d[p.key]);
     });
 
-    // truncate long text strings to fit in data table
+    link_key = "article link";
+
+    // truncate long text strings to fit in data table, not done on the article link as it would mess it up
     for (var key in d) {
-      if (d[key] && d[key].length > 35) d[key] = d[key].slice(0,36);
+      if (key != link_key && d[key] && d[key].length > 35) d[key] = d[key].slice(0,36);
     }
+
+    // remove additional links
+    if (d[link_key].indexOf(" ") >= 0) {
+    	d[link_key] = d[link_key].substring(0, d[link_key].indexOf(" ") );
+    }
+
+    // create hypertext links
+    if (d[link_key].startsWith("http")) {
+	    if (d[link_key].length > 71) {
+	    	d[link_key] = "<a href='"+d[link_key]+"'>"+d[link_key].slice(0,72)+"</a>";
+	    } else {
+	    	d[link_key] = "<a href='"+d[link_key]+"'>"+d[link_key]+"</a>";
+		}
+	}
   });
 
   // type/dimension default setting happens here
@@ -150,10 +166,51 @@ d3.csv(path_to_csv, function(error, data) {
       .attr("x", -8)
       .attr("width", 16);
 
-  d3.selectAll(".axis.pl_discmethod .tick text")
+  d3.selectAll(".axis.actor .tick text")
     .style("fill", color);
-    
-  output.text(d3.tsvFormat(data.slice(0,24)));
+  
+  data_agg = d3.nest()
+    .key(function (d) {return +d.year; })
+    .rollup(function(v) { return v.length; })
+    .entries(data);
+
+  data_agg.forEach(function(d) { d.key = +d.key; })
+
+  data_agg = data_agg.sort(function(x, y){
+    return d3.ascending(x.key, y.key);
+  })
+  
+  console.log(data_agg);
+
+  var x_line = d3.scaleLinear()
+    .domain((d3.extent(data_agg, function (d) { return d.key; })))
+    .range([0,width]);
+
+  var y_line = d3.scaleLinear()
+    .domain([0, d3.max(data_agg, function (d) { return d.value; })])
+    .range([height - margin.line_bottom, innerHeight + margin.line_top]);
+
+  svg.append("g")
+    .attr("transform", "translate(0," + (height - margin.line_bottom) + ")")
+    .attr("class", "xaxis")
+    .call(d3.axisBottom(x_line).ticks(10));
+
+  svg.append("g")
+    .attr("class", "yaxis")
+    .call(d3.axisLeft(y_line));
+  
+  var line = d3.line()
+    .x(function(d) { return x_line(d.key) })
+    .y(function(d) { return y_line(d.value) })
+    .curve(d3.curveCardinal)
+
+  svg.append("path")
+    .attr("class", "line")
+    .style("stroke", "red")
+    .attr("fill", 'none')
+    .attr("d", line(data_agg));
+  
+  output.html(d3.tsvFormat(data.slice(0,24)));
 
   function project(d) {
     return dimensions.map(function(p,i) {
@@ -168,7 +225,7 @@ d3.csv(path_to_csv, function(error, data) {
   };
 
   function draw(d) {
-    ctx.strokeStyle = color(d.pl_discmethod);
+    ctx.strokeStyle = color(d.actor);
     ctx.beginPath();
     var coords = project(d);
     coords.forEach(function(p,i) {
@@ -232,42 +289,64 @@ d3.csv(path_to_csv, function(error, data) {
       }
     });
 
-    // show ticks for active brush dimensions
-    // and filter ticks to only those within brush extents
-    /*
-    svg.selectAll(".axis")
-        .filter(function(d) {
-          return actives.indexOf(d) > -1 ? true : false;
-        })
-        .classed("active", true)
-        .each(function(dimension, i) {
-          var extent = extents[i];
-          d3.select(this)
-            .selectAll(".tick text")
-            .style("display", function(d) {
-              var value = dimension.type.coerce(d);
-              return dimension.type.within(value, extent, dimension) ? null : "none";
-            });
-        });
-
-    // reset dimensions without active brushes
-    svg.selectAll(".axis")
-        .filter(function(d) {
-          return actives.indexOf(d) > -1 ? false : true;
-        })
-        .classed("active", false)
-        .selectAll(".tick text")
-          .style("display", null);
-    */
-
     ctx.clearRect(0,0,width,height);
     ctx.globalAlpha = d3.min([0.85/Math.pow(selected.length,0.3),1]);
     render(selected);
 
-    output.text(d3.tsvFormat(selected.slice(0,24)));
+    data_agg = d3.nest()
+	  .key(function (d) {return +d.year; })
+	  .rollup(function(v) { return v.length; })
+	  .entries(selected);
+
+	data_agg.forEach(function(d) { d.key = +d.key; })
+
+	data_agg = data_agg.sort(function(x, y){
+	  return d3.ascending(x.key, y.key);
+	})
+
+	var x_line = d3.scaleLinear()
+	  .domain((d3.extent(data_agg, function (d) { return d.key; })))
+	  .range([0,width]);
+
+	var y_line = d3.scaleLinear()
+	  .domain([0, d3.max(data_agg, function (d) { return d.value; })])
+	  .range([height - margin.line_bottom, innerHeight + margin.line_top]);
+
+	svg.selectAll(".xaxis")
+	  .transition()
+	  .duration(1000)
+      .call(d3.axisBottom(x_line).ticks(10));
+
+    svg.append("g")
+	  .attr("class", "yaxis")
+	  .call(d3.axisLeft(y_line));
+	  
+	var line = d3.line()
+	  .x(function(d) { return x_line(d.key) })
+	  .y(function(d) { return y_line(d.value) })
+	  .curve(d3.curveCardinal)
+
+    svg.selectAll(".line")
+      .transition()
+      .duration(1000)
+      .attr("d", line(data_agg));
+
+
+    output.html(d3.tsvFormat(selected.slice(0,24)));
   }
 });
 
 function d3_functor(v) {
   return typeof v === "function" ? v : function() { return v; };
+};
+
+function tsv_formatter(d) {
+	keys = d[0].keys;
+	output = keys.join("\t");
+	output += "\n";
+	d.forEach(function (l) {
+		var values = keys.map(function (k) { return toString(l[k]) });
+		output = values.join("\t");
+		output += "\n";
+	});
 };
